@@ -14,7 +14,15 @@ fi
 echo "Installing powerDown to ${INSTALL_DIR}"
 
 install -d -m 755 "${INSTALL_DIR}"
-install -m 755 "${REPO_DIR}/powerDown.py" "${INSTALL_DIR}/powerDown.py"
+
+SOURCE_SCRIPT="${REPO_DIR}/powerDown.py"
+TARGET_SCRIPT="${INSTALL_DIR}/powerDown.py"
+
+if [ "${SOURCE_SCRIPT}" = "${TARGET_SCRIPT}" ]; then
+    chmod 755 "${TARGET_SCRIPT}"
+else
+    install -m 755 "${SOURCE_SCRIPT}" "${TARGET_SCRIPT}"
+fi
 
 sed "s#__INSTALL_DIR__#${INSTALL_DIR}#g" "${REPO_DIR}/${SERVICE_NAME}" > "/etc/systemd/system/${SERVICE_NAME}"
 chmod 644 "/etc/systemd/system/${SERVICE_NAME}"
