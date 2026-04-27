@@ -1,0 +1,17 @@
+#
+# Installed by install.sh to /etc/systemd/system/powerDown.service
+#
+[Unit]
+Description=UPS GPIO auto shutdown service
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -u __INSTALL_DIR__/powerDown.py
+WorkingDirectory=__INSTALL_DIR__
+User=root
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
