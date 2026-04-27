@@ -18,8 +18,11 @@ PIN = 24 # GPIO Pin that goes low when power is lost
 POWER_OUTAGE = 12 # How long to run on UPS before initiating shutdown (seconds)
 FLUSH_TO_DISK = 3 # How long to wait before shutting down after OS sync instruction issued
 POLL_INTERVAL = 1 # How often to check the GPIO input while waiting for power loss (seconds)
+BOUNCE_TIME = 200 # Ignore repeated falling edges for this many milliseconds
 
 GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+GPIO.cleanup(PIN)
 GPIO.setup(PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 # Create a logger object
@@ -38,12 +41,23 @@ syslog_handler.setFormatter(formatter)
 # Add the handler to the logger
 logger.addHandler(syslog_handler)
 
-try:
-   while True:
-      # Polling is less fragile than edge detection across Raspberry Pi OS/GPIO library versions.
-      logger.info("Waiting for power loss signal on GPIO "+str(PIN))
+def wait_for_power_loss():
+   logger.info("Waiting for power loss signal on GPIO "+str(PIN))
+
+   if GPIO.input(PIN) == 0:
+      return
+
+   try:
+      GPIO.wait_for_edge(PIN, GPIO.FALLING, bouncetime=BOUNCE_TIME)
+   except RuntimeError as error:
+      logger.warning("GPIO edge detection failed; falling back to polling: "+str(error))
       while GPIO.input(PIN) != 0:
          time.sleep(POLL_INTERVAL)
+
+
+try:
+   while True:
+      wait_for_power_loss()
 
       logger.info("Power loss occurred.")
 
