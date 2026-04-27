@@ -11,16 +11,16 @@
 import RPi.GPIO as GPIO
 import time
 import os
-from datetime import datetime
 import logging
 import logging.handlers
 
 PIN = 24 # GPIO Pin that goes low when power is lost
 POWER_OUTAGE = 12 # How long to run on UPS before initiating shutdown (seconds)
 FLUSH_TO_DISK = 3 # How long to wait before shutting down after OS sync instruction issued
+POLL_INTERVAL = 1 # How often to check the GPIO input while waiting for power loss (seconds)
 
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(PIN, GPIO.IN)
+GPIO.setup(PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 # Create a logger object
 logger = logging.getLogger('powerDown')
@@ -38,21 +38,26 @@ syslog_handler.setFormatter(formatter)
 # Add the handler to the logger
 logger.addHandler(syslog_handler)
 
-while True:
-   # Wait for power to drop.
-   logger.info("Waiting for power loss signal on GPIO "+str(PIN))
-   GPIO.wait_for_edge(PIN, GPIO.FALLING)
-   logger.info("Power loss occurred.")
+try:
+   while True:
+      # Polling is less fragile than edge detection across Raspberry Pi OS/GPIO library versions.
+      logger.info("Waiting for power loss signal on GPIO "+str(PIN))
+      while GPIO.input(PIN) != 0:
+         time.sleep(POLL_INTERVAL)
 
-   # Give user time to restore power.
-   logger.info("Waiting to see if power is restored.")
-   time.sleep(POWER_OUTAGE)
+      logger.info("Power loss occurred.")
 
-   if GPIO.input(PIN) == 0:
-       logger.info("Power not restored. Saving data then shutting down.")
-       os.system('sync')
-       time.sleep(FLUSH_TO_DISK)
-       os.system("sudo shutdown -h now")
-       break;
-   else:
-       logger.info("Power restored.")
+      # Give user time to restore power.
+      logger.info("Waiting to see if power is restored.")
+      time.sleep(POWER_OUTAGE)
+
+      if GPIO.input(PIN) == 0:
+         logger.info("Power not restored. Saving data then shutting down.")
+         os.system('sync')
+         time.sleep(FLUSH_TO_DISK)
+         os.system("sudo shutdown -h now")
+         break
+      else:
+         logger.info("Power restored.")
+finally:
+   GPIO.cleanup()
