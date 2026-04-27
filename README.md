@@ -18,13 +18,24 @@ FLUSH_TO_DISK = 3
 
 ## Install From Git
 
-On the Raspberry Pi:
+On a fresh Raspberry Pi, install Git first:
 
 ```sh
 sudo apt update
-sudo apt install -y git python3-rpi.gpio
+sudo apt install -y git
+```
+
+Clone this repository:
+
+```sh
 git clone https://github.com/mcdonaldajr/powerDown.git
 cd powerDown
+```
+
+Install the GPIO Python package and set up the service:
+
+```sh
+sudo apt install -y python3-rpi.gpio
 sudo ./install.sh
 ```
 
