@@ -19,7 +19,7 @@ SOURCE_SCRIPT="${REPO_DIR}/powerDown.py"
 TARGET_SCRIPT="${INSTALL_DIR}/powerDown.py"
 
 if [ "${SOURCE_SCRIPT}" = "${TARGET_SCRIPT}" ]; then
-    chmod 755 "${TARGET_SCRIPT}"
+    echo "Source already in install directory; skipping script copy."
 else
     install -m 755 "${SOURCE_SCRIPT}" "${TARGET_SCRIPT}"
 fi
