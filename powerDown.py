@@ -11,12 +11,15 @@
 import RPi.GPIO as GPIO
 import time
 import os
+import subprocess
 import logging
 import logging.handlers
 
 PIN = 24 # GPIO Pin that goes low when power is lost
 POWER_OUTAGE = 12 # How long to run on UPS before initiating shutdown (seconds)
 FLUSH_TO_DISK = 3 # How long to wait before shutting down after OS sync instruction issued
+SHUTDOWN_TIME = "+1" # Scheduled shutdown time. Use +1 for one minute.
+SHUTDOWN_MESSAGE = "UPS power lost; system shutting down soon."
 POLL_INTERVAL = 1 # How often to check the GPIO input while waiting for power loss (seconds)
 BOUNCE_TIME = 200 # Ignore repeated falling edges for this many milliseconds
 
@@ -66,10 +69,10 @@ try:
       time.sleep(POWER_OUTAGE)
 
       if GPIO.input(PIN) == 0:
-         logger.info("Power not restored. Saving data then shutting down.")
+         logger.info("Power not restored. Saving data then scheduling shutdown.")
          os.system('sync')
          time.sleep(FLUSH_TO_DISK)
-         os.system("sudo shutdown -h now")
+         subprocess.run(["shutdown", "-h", SHUTDOWN_TIME, SHUTDOWN_MESSAGE], check=False)
          break
       else:
          logger.info("Power restored.")

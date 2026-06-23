@@ -2,7 +2,7 @@
 
 `powerDown` is a Raspberry Pi systemd service that watches a UPS power-loss signal on a GPIO pin and shuts the Pi down if power is not restored within a configured grace period.
 
-By default, the script watches BCM GPIO 24. When that pin falls low, it waits 12 seconds, runs `sync`, waits another 3 seconds for disk flushes, then shuts the Pi down.
+By default, the script watches BCM GPIO 24. When that pin falls low, it waits 12 seconds, runs `sync`, waits another 3 seconds for disk flushes, then schedules a normal OS shutdown.
 
 ## Hardware Assumption
 
@@ -14,7 +14,13 @@ If your UPS uses another GPIO pin or you need a longer grace period, edit these 
 PIN = 24
 POWER_OUTAGE = 12
 FLUSH_TO_DISK = 3
+SHUTDOWN_TIME = "+1"
 ```
+
+`SHUTDOWN_TIME` uses the normal `shutdown` time syntax. `+1` schedules shutdown
+in one minute, which gives other services time to see the systemd scheduled
+shutdown state and close files cleanly. Pi Controller `v1.2.3` watches for that
+scheduled shutdown and publishes a Watchkeeper power intent for Signal K apps.
 
 ## Install From Git
 
